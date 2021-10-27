@@ -25,17 +25,6 @@ d  = [];
 
 
 
-%% Plot Toggles
-
-plotall        = 0;
-plotsplineeval = 0;
-plotspeed      = 0;
-plotdist       = 0;
-plotposition   = 0;
-plotang        = 0;
-plotacc        = 0;
-
-
 %% Nonspecific Variables
 
 % Start frame (if need to start from nonzero frame)
@@ -65,10 +54,6 @@ V.height = iC.vHeight;  % v.Height
 d.t = (Body.frames-min(Body.frames))./iC.frameRate;
 d.t = d.t(c:e);
 
-% Frame of reference angle (in Degrees)
-d.FoRang = L.ang_pd;
-d.FoRfrm = L.FoRframes;
-
 % Initial period used to identify initial heading (s)
 d.startPeriod = 0.5;
 
@@ -79,7 +64,7 @@ d.strike_frame = length(Body.frames(c:e));
 
 
 
-%% Initilize and Calculate Fish Variables
+%% Initilize and Adjust Fish Variables
 
 
 % Positional
@@ -90,33 +75,16 @@ d.yPd_pix = V.height - Body.y(c:e,1);
 
 % Prey trajectories (in pixels)
 d.xPy_pix = Body.x(c:e,2);
-d.yPy_pix = V.height - Body.y(c:e,2);
+d.yPy_pix = 
 
 % (in meters)
 % Predator
-d.xPd = d.xPd_pix*d.cF;
-d.yPd = d.yPd_pix*d.cF;
+d.xPd = 
+d.yPd = 
 
 % Prey
-d.xPy = d.xPy_pix*d.cF;
-d.yPy = d.yPy_pix*d.cF;
-
-
-
-% Predator body orientation from tform
-
-% extract tform
-for f = c:length(Body.Rotation.tform)
-    tform(f) = Body.Rotation.tform(f);
-    d.tform.Pd.x(f,1) = tform(f).T(1,1);
-    d.tform.Pd.y(f,1) = tform(f).T(1,2);
-end
-clear f
-
-% correct for c start
-d.tformPd.x(:,1) = d.tform.Pd.x(c:e,1);
-d.tformPd.y(:,1) = d.tform.Pd.y(c:e,1) ;
-
+d.xPy = 
+d.yPy = 
 
 
 
@@ -133,168 +101,20 @@ d.sp = calcdata('splines',d);
 
 
 % Calculate angles
-[d.sp.bearing,d.sp.alpha,d.sp.thetaPy,d.sp.thetaPd,d.sp.thetaPdH,d.sp.bearingH] = ...
+[d.sp.bearing,d.sp.alpha,d.sp.thetaPy,d.sp.thetaPd] = ...
     calcdata('angles',d);
+
 
 
 %% Calculate data
 
-% Distance
-d.dist = hypot(d.xPy-d.xPd,d.yPy-d.yPd);
-sp.dist = hypot(d.sp.xPrey_fit-d.sp.xPred_fit, d.sp.yPrey_fit-d.sp.yPred_fit);
+% Distance (hypot)
 
 
-%% Plots
 
-if plotall
-    
-    if plotsplineeval
-        figure
-        title([num2str(seqNum),'   Fish ID'])
-        subplot(2,1,1)
-        hold on
-        plot(D.t,D.xPy,'bo',D.t,D.yPy,'bo')
-        fnplt(sp.xPrey,'y')
-        fnplt(sp.yPrey,'y')
-        title('Prey Splines')
-        %         xlabel('x')
-        %         ylabel('Time')
-        subplot(2,1,2)
-        hold on
-        plot(D.t,D.xPd,'ro',D.t,D.yPd,'ro')
-        fnplt(sp.xPred,'b')
-        fnplt(sp.yPred,'b')
-        title('Pred Splines')
-        %         xlabel('x')
-        %         ylabel('Time')
-        
-        
-        figure
-        
-        subplot(2,1,1)
-        hold on
-        plot(D.t,d.spdPy,'bo')
-        fnplt(sp.spdPy,'g')
-        title(['Prey Splines ',num2str(sp.tol.py),' tol,'])
-        subplot(2,1,2)
-        hold on
-        plot(D.t,d.spdPd,'ro')
-        fnplt(sp.spdPd,'g')
-        title(['Pred Splines ',num2str(sp.tol.pd),' tol,'])
-        
-    end
-    
-    if plotposition
-        figure
-        hold on
-        plot(d.xTank,d.yTank)
-        plot(sp.xPyVal,sp.yPyVal,'b')
-        plot(sp.xPdVal,sp.yPdVal,'r')
-        set(gca, 'YDir','reverse')
-        title('Fish Trajectories')
-        
-    end
-    
-    if plotdist
-        figure
-        hold on
-        plot(D.t,d.dist,'gx')
-        plot(D.t,sp.dist,'k')
-        title('Distance btw Pd/Py')
-        xlabel('Time (s)')
-        ylabel('Distance (m)')
-    end
-    
-    if plotspeed
-        figure
-        subplot(2,1,1)
-        hold on
-        plot(D.t(bump:end),d.spdPd(bump:end),'bo',D.t(bump:end),d.spdPy(bump:end),'bo')
-        fnplt(sp.xPrey,'y')
-        fnplt(sp.yPrey,'y')
-        title('Prey Splines')
-        %         xlabel('x')
-        %         ylabel('Time')
-        subplot(2,1,2)
-        hold on
-        plot(D.t,D.xPd,'ro',D.t,D.yPd,'ro')
-        fnplt(sp.xPred,'b')
-        fnplt(sp.yPred,'b')
-        title('Pred Splines')
-        
-        
-        figure
-        %velocity
-        set(0,'DefaultFigureWindowStyle','docked')
-        subplot(2,1,1)
-        hold on
-        plot(D.t(bump:end),sp.spdPyVal(bump:end),'b')
-        plot(D.t(bump:end),sp.spdPdVal(bump:end),'r')
-        %         ylim([0 0.2])
-        %         ylim([0 2])
-        title('Fish Velocity')
-        xlabel('Time (s)')
-        ylabel('Velocity (m/s)')
-        
-        
-        %Velocity Raw
-        subplot(2,1,2)
-        hold on
-        plot(D.t(bump:end),d.spdPd(bump:end),'r')
-        plot(D.t(bump:end),d.spdPy(bump:end),'b')
-        %         ylim([0 1])
-        %         ylim([0 2])
-        title('Raw Velocity')
-        xlabel('Time (s)')
-        ylabel('Velocity (m/s^2)')
-        
-        
-        % Accel plots
-        if plotacc
-            figure
-            %acceleration
-            subplot(2,1,2)
-            hold on
-            plot(D.t,sp.accPdVal,'r')
-            plot(D.t,sp.accPyVal,'b')
-            ylim([0 1])
-            title('Fish Acceleration')
-            xlabel('Time (s)')
-            ylabel('Velocity (m/s^2)')
-        end
-        %
-        %     figure
-        %     plot(D.t,d.spdPy,'b',D.t,d.spdPd,'r')
-        %         title('Fish velocity')
-        %         xlabel('Time (s)')
-        %         ylabel('Velocity (m/s)')
-        %
-    end
-    
-    % Angle plots
-    if plotang
-        figure
-        hold on
-        plot(D.t,D.angPy,'bo',D.t,D.angPd,'ro')
-        plot(D.t,sp.angPyVal,'g',D.t,sp.angPdVal,'k')
-        
-        figure
-        subplot(2,2,1)
-        plot(D.t,d.thetaPy,'b',D.t,d.thetaPd,'r')
-        
-        subplot(2,2,2)
-        plot(D.t,d.bearing)
-        
-        subplot(2,2,3)
-        plot(D.t,d.alpha)
-        
-        subplot(2,2,4)
-        plot(D.t,d.beta)
-        
-    end
-    
-    
-end
+%% Plot
+
+
 
 
 %% Save Output
@@ -305,6 +125,8 @@ save([selpath filesep 'anaSeq.mat'],'d');
 display('Analysis complete')
 
 
+
+
 function varargout = calcdata(action,dIn)
 %% Calculate data
 
@@ -312,17 +134,15 @@ function varargout = calcdata(action,dIn)
 if strcmp(action,'angles') % Angles ---------------------------------------
     
     % Run calculation
-    [bearing,alpha,thetaPy,thetaPd,thetaPdH,bearingH] = calc_angles(dIn);
+    [bearing,alpha,thetaPy,thetaPd] = calc_angles(dIn);
+
     
     % Store output
     varargout{1} = bearing;
     varargout{2} = alpha;
     varargout{3} = thetaPy;
     varargout{4} = thetaPd;
-    varargout{5} = thetaPdH;
-    varargout{6} = bearingH;
-    
-    
+
 elseif strcmp(action,'start angle') % Start angle -------------------------
     % Fit to initial points
     cXprey = polyfit(dIn.t,dIn.xPy,1);
@@ -358,7 +178,49 @@ else
     error('action not identified')
 end
 
-function [bearing,alpha,thetaPy,thetaPd,thetaPdH,bearingH] = calc_angles(d)
+function sp = calc_splines(d)
+%% Calculate splines
+
+% Whether to plot data
+spCheck = 0;
+
+frame  = d.frame';
+xPrey  = d.xPy;
+yPrey  = d.yPy;
+xPred  = d.xPd;
+yPred  = d.yPd;
+
+% generate a time vector
+sp.t = d.t;
+
+% Store frame numbers
+sp.frStart = d.startFrame;
+sp.frEnd   = length(frame);
+
+
+% Smooth prey data
+xPrey_sm = smooth(xPrey);
+yPrey_sm = smooth(yPrey);
+
+% Spline fit prey position
+sp.xPy = spline(sp.t,xPrey_sm);
+sp.yPy = spline(sp.t,yPrey_sm);
+
+sp.xPrey_fit = fnval(sp.t,sp.xPy);
+sp.yPrey_fit = fnval(sp.t,sp.yPy);
+
+% Smooth predatory data data
+xPred_sm = smooth(xPred);
+yPred_sm = smooth(yPred);
+
+% Spline fit predator rostrum position
+sp.xPd = spline(sp.t,xPred_sm);
+sp.yPd = spline(sp.t,yPred_sm);
+
+sp.xPred_fit = fnval(sp.t,sp.xPd);
+sp.yPred_fit = fnval(sp.t,sp.yPd);
+
+function [bearing,alpha,thetaPy,thetaPd] = calc_angles(d)
 %% Calculate angular quantities from trajectory data
 
 % Solve for discrete points from splines
@@ -407,26 +269,6 @@ dxPrey_fitsm = fnval(d.sp.t,d.sp.dxPrey_fit);
 % Predator heading angle using velocity
 thetaPd = atan2(dyPred_fitsm,dxPred_fitsm);
 
-% Predator heading from tform
-thPdH = atan2(d.tformPd.y,d.tformPd.x);
-
-% Calibrate theta from heading with FoR angles
-
-for f = 1:length(d.FoRfrm)
-    aRot(f,1) = thPdH(find(d.frame==d.FoRfrm(f)));
-end
-clear f
-
-aMeas = d.FoRang;
-aDiff = unwrap(aRot) + unwrap(aMeas);
-aFinal = thPdH - mean(aDiff);
-thetaPdH = aFinal;
-
-
-
-% diff = d.FoRang*pi/180;
-% thetaPdH = -diff + thPdH(:);
-% thetaPdH = thetaPdH*180/pi;
 
 % Angle of baseline vector (alpha)
 alpha = atan2(vBase(:,2),vBase(:,1));
@@ -434,8 +276,7 @@ alpha = atan2(vBase(:,2),vBase(:,1));
 % Bearing angle
 bearing = atan2(sin(alpha - thetaPd),cos(alpha - thetaPd));
 
-% Bearing angle from tform theta
-bearingH = atan2(sin(alpha - thetaPdH),cos(alpha - thetaPdH));
+
 
 % Speed of prey
 vPrey = sqrt(sum([dxPrey_fitsm, dyPrey_fitsm].^2,2));
@@ -446,8 +287,7 @@ vPred = sqrt(sum([dxPred_fitsm, dyPred_fitsm].^2,2));
 % Prey heading angle using velocity
 thetaPy= atan2(dyPrey_fit,dxPrey_fit);
 
-% % Prey heading angle from tform
-% thPyH = atan2(d.tformPy.y,d.tformPy.x);
+
 
 % Angle between prey velocity and baseline vector
 beta= atan2(sin(alpha - thetaPy),cos(alpha - thetaPy));
@@ -480,46 +320,6 @@ dYPd  = fnval(fnder(sp.yPd),sp.t);
 spdPd = hypot(dXPd,dYPd);
 
 
-function sp = calc_splines(d)
-%% Calculate splines
 
-% Whether to plot data
-spCheck = 0;
-
-frame  = d.frame';
-xPrey  = d.xPy;
-yPrey  = d.yPy;
-xPred  = d.xPd;
-yPred  = d.yPd;
-
-% generate a time vector
-sp.t = d.t;
-
-% Store frame numbers
-sp.frStart = d.startFrame;
-sp.frEnd   = length(frame);
-
-
-% Smooth prey data
-xPrey_sm = smooth(xPrey);
-yPrey_sm = smooth(yPrey);
-
-% Spline fit prey position
-sp.xPy = spline(sp.t,xPrey_sm);
-sp.yPy = spline(sp.t,yPrey_sm);
-
-sp.xPrey_fit = fnval(sp.t,sp.xPy);
-sp.yPrey_fit = fnval(sp.t,sp.yPy);
-
-% Smooth predatory data data
-xPred_sm = smooth(xPred);
-yPred_sm = smooth(yPred);
-
-% Spline fit predator rostrum position
-sp.xPd = spline(sp.t,xPred_sm);
-sp.yPd = spline(sp.t,yPred_sm);
-
-sp.xPred_fit = fnval(sp.t,sp.xPd);
-sp.yPred_fit = fnval(sp.t,sp.yPd);
 
 
